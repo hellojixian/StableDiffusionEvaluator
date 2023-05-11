@@ -1,5 +1,5 @@
 import torch
-import math
+import sys
 import random
 import shutil
 
@@ -21,7 +21,7 @@ output_filename = f"output/generate_image.png"
 # init clip evaluator
 ce = ClipEvaluator()
 
-prompt = "a cat is running on the grass"
+prompt = " ".join(sys.argv[1:]) or "a photograph of an astronaut riding a horse"
 print(f"prompt score: {ce.evaluate_prompt(prompt)}")
 
 # generate an image with prompt
@@ -44,5 +44,5 @@ reference_image_score = ce.evaluate_prompt_image(prompt, reference_image.path)
 shutil.move(reference_image.path, "output/reference_image.png")
 print(f"grand true image score: {reference_image_score}")
 
-overall_score = math.exp(genenerated_image_score - reference_image_score) - 1
+overall_score = (genenerated_image_score - reference_image_score) * 100
 print(f"overall score: {overall_score}")
