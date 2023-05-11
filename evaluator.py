@@ -26,6 +26,7 @@ print(f"prompt score: {ce.evaluate_prompt(prompt)}")
 
 # generate an image with prompt
 pipe = StableDiffusionPipeline.from_pretrained(model_path, torch_dtype=torch.float16)
+pipe.set_progress_bar_config(disable=True)
 pipe.to("cuda" if torch.cuda.is_available() else "cpu")
 image = pipe(prompt,
               width=width,
