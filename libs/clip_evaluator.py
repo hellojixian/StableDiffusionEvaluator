@@ -46,4 +46,26 @@ class ClipEvaluator:
     random_similarity = torch.mean(random_similarity).cpu().detach().numpy()
     prompt_similarity = torch.cosine_similarity(image_features, test_features, dim=1).cpu().detach().numpy()[0]
     # print(random_similarity, prompt_similarity)
-    return math.exp(prompt_similarity - random_similarity)
+    return prompt_similarity - random_similarity
+
+  @torch.no_grad()
+  def evaluate_image_images(self, generated_image, groundtruth_images):
+    generated_image_features = self.model.get_image_features(
+      **self.processor(images=Image.open(generated_image), return_tensors="pt").to(self.device))
+
+    # extrach features for groundtruth images
+    groundtruth_images_features = torch.zeros((0, self.model.config.projection_dim)).to(self.device)
+    for img in groundtruth_images:
+      groundtruth_images_features = torch.cat([groundtruth_images_features, self.model.get_image_features(
+        **self.processor(images=Image.open(img), return_tensors="pt").to(self.device))])
+
+    # calcuate similarity in between each groundtruth image
+    shifted_groundtruth_images_features = torch.cat([groundtruth_images_features[-1:], groundtruth_images_features[:-1]])
+
+    groundtruth_similarity = torch.cosine_similarity(shifted_groundtruth_images_features, groundtruth_images_features, dim=1)
+    groundtruth_score = torch.mean(groundtruth_similarity).cpu().detach().numpy()
+
+    similarity = torch.cosine_similarity(generated_image_features, groundtruth_images_features, dim=1)
+    score = torch.mean(similarity).cpu().detach().numpy()
+    loss = groundtruth_score - score
+    return loss
